@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CHAOS PARTY - Ultimate Browser Party Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-main: 'Outfit', sans-serif;
+            --font-fun: 'Fredoka', cursive;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: #0f0c20;
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .font-fun { font-family: var(--font-fun); }
+
+        /* Animated Gradient Background */
+        .bg-mesh {
+            background: radial-gradient(circle at 20% 20%, #ff2a75 0%, transparent 40%),
+                        radial-gradient(circle at 80% 80%, #00f0ff 0%, transparent 40%),
+                        radial-gradient(circle at 50% 50%, #7000ff 0%, transparent 60%),
+                        #0a0718;
+            background-size: 150% 150%;
+            animation: meshMove 12s ease infinite alternate;
+        }
+
+        @keyframes meshMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* Screen Shake Effect */
+        .shake-screen {
+            animation: screenShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes screenShake {
+            10%, 90% { transform: translate3d(-3px, 1px, 0) rotate(-1deg); }
+            20%, 80% { transform: translate3d(5px, -3px, 0) rotate(1.5deg); }
+            30%, 50%, 70% { transform: translate3d(-6px, 4px, 0) rotate(-2deg); }
+            40%, 60% { transform: translate3d(6px, -2px, 0) rotate(2deg); }
+        }
+
+        /* Bouncy Button Styling */
+        .btn-bounce {
+            transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.3), 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .btn-bounce:hover {
+            transform: translateY(-3px) scale(1.02);
+            filter: brightness(1.1);
+        }
+        .btn-bounce:active {
+            transform: translateY(4px) scale(0.97);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+        }
+
+        /* Neon Glows */
+        .glow-pink { box-shadow: 0 0 25px rgba(255, 42, 117, 0.6); }
+        .glow-cyan { box-shadow: 0 0 25px rgba(0, 240, 255, 0.6); }
+        .glow-yellow { box-shadow: 0 0 25px rgba(255, 214, 10, 0.6); }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        canvas {
+            touch-action: none;
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-mesh min-h-screen flex flex-col justify-between items-center relative overflow-hidden select-none">
+
+    <canvas id="bgCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Top Navigation / Settings Bar -->
+    <header class="w-full max-w-6xl p-4 flex justify-between items-center z-10">
+        <div class="flex items-center gap-3">
+            <h1 class="text-3xl md:text-4xl font-extrabold font-fun tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-400 drop-shadow-md">
+                CHAOS PARTY! 🎉
+            </h1>
+            <span id="roomCodeBadge" class="hidden bg-purple-900/80 border border-purple-500/50 text-cyan-300 font-mono px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase">
+                ROOM: <span id="displayRoomCode">----</span>
+            </span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="sfxToggle" class="btn-bounce bg-slate-800/80 hover:bg-slate-700 p-2.5 rounded-xl border border-white/10 text-xl" title="Toggle Sound Effects">🔊</button>
+            <button id="bgmToggle" class="btn-bounce bg-slate-800/80 hover:bg-slate-700 p-2.5 rounded-xl border border-white/10 text-xl" title="Toggle Music">🎵</button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="w-full max-w-4xl px-4 my-auto z-10 flex flex-col items-center">
+
+        <!-- 1. MAIN MENU SCREEN -->
+        <section id="screen-menu" class="w-full flex flex-col items-center text-center space-y-6">
+            <div class="animate-float my-4">
+                <span class="text-8xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">👑💣🌀</span>
+            </div>
+            <p class="text-lg md:text-xl text-purple-200 max-w-md font-medium">
+                The ultimate frantic multiplayer browser party experience! 10 minigames, zero chill.
+            </p>
+
+            <div class="w-full max-w-md bg-slate-900/80 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-2xl space-y-4">
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-slate-400 font-bold mb-1">Your Nickname</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="playerNameInput" maxlength="12" class="w-full bg-slate-800 border-2 border-purple-500/40 focus:border-cyan-400 outline-none rounded-xl px-4 py-3 text-lg font-bold text-center text-white" placeholder="SaltyNoodle">
+                        <button id="randomNameBtn" class="btn-bounce bg-purple-600 hover:bg-purple-500 px-4 rounded-xl text-xl" title="Randomize Name">🎲</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Choose Avatar & Color</label>
+                    <div id="avatarPicker" class="grid grid-cols-5 gap-2 mb-3"></div>
+                    <div id="colorPicker" class="flex justify-center gap-2"></div>
+                </div>
+
+                <div class="pt-2 space-y-3">
+                    <button id="btnPlayBots" class="w-full btn-bounce bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 text-white font-extrabold text-xl py-3.5 rounded-2xl shadow-lg glow-pink">
+                        🤖 QUICK PLAY (VS BOTS)
+                    </button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="btnCreateRoom" class="btn-bounce bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold py-3 rounded-2xl text-sm tracking-wide">
+                            🏠 CREATE ROOM
+                        </button>
+                        <button id="btnJoinRoom" class="btn-bounce bg-purple-600 hover:bg-purple-500 text-white font-extrabold py-3 rounded-2xl text-sm tracking-wide">
+                            🔗 JOIN ROOM
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. LOBBY SCREEN -->
+        <section id="screen-lobby" class="w-full hidden flex-col items-center text-center space-y-6">
+            <div class="bg-slate-900/80 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-2xl w-full max-w-2xl">
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-4 mb-4">
+                    <div class="text-left">
+                        <h2 class="text-2xl font-black font-fun text-yellow-400">PARTY LOBBY</h2>
+                        <p class="text-xs text-slate-400">Code: <span id="lobbyRoomCodeDisplay" class="font-mono text-cyan-300 font-bold text-sm">--</span> (Share with tabs!)</p>
+                    </div>
+                    <button id="addBotBtn" class="btn-bounce bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-white/10">
+                        + Add Bot
+                    </button>
+                </div>
+
+                <div id="lobbyPlayerList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-[180px] mb-6"></div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button id="btnLeaveLobby" class="btn-bounce w-full sm:w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-2xl">
+                        👈 LEAVE
+                    </button>
+                    <button id="btnStartGame" class="btn-bounce w-full sm:w-2/3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold text-xl py-3.5 rounded-2xl glow-cyan">
+                        🚀 START CHAOS!
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. COUNTDOWN & MINIGAME INSTRUCTIONS ANNOUNCER -->
+        <section id="screen-countdown" class="w-full hidden flex-col items-center text-center space-y-4">
+            <div id="modifierBadge" class="hidden bg-gradient-to-r from-yellow-500 to-red-600 text-black font-extrabold px-6 py-2 rounded-full text-lg shadow-xl animate-bounce tracking-widest uppercase">
+                ⚡ SURPRISE MODIFIER: <span id="modifierText">DOUBLE POINTS</span>
+            </div>
+            <div class="bg-slate-900/90 backdrop-blur-lg p-8 rounded-3xl border-2 border-cyan-400/50 shadow-2xl w-full max-w-xl text-center space-y-4">
+                <span id="gameIconDisplay" class="text-7xl block animate-pulse">🎯</span>
+                <h2 id="gameTitleDisplay" class="text-3xl md:text-4xl font-black font-fun text-yellow-400">MINIGAME TITLE</h2>
+                <p id="gameInstructionsDisplay" class="text-lg text-slate-200">Instructions go here!</p>
+                <div class="text-6xl font-black font-fun text-cyan-300 pt-4" id="countdownNumber">3</div>
+            </div>
+        </section>
+
+        <!-- 4. ACTIVE PLAYING HUD & MINIGAME CONTAINER -->
+        <section id="screen-playing" class="w-full hidden flex-col items-center">
+            <!-- HUD -->
+            <div class="w-full flex justify-between items-center bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 mb-3 text-sm font-bold">
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-400">ROUND</span>
+                    <span id="hudRound" class="text-yellow-400 font-mono text-base">1/5</span>
+                </div>
+                <div id="hudTimer" class="font-mono text-2xl text-cyan-300 font-black px-3 py-0.5 bg-slate-800 rounded-lg border border-cyan-500/30">
+                    20
+                </div>
+                <div id="hudMinigameName" class="text-slate-300 truncate max-w-[140px] sm:max-w-none">
+                    Minigame Name
+                </div>
+            </div>
+
+            <!-- CANVAS / DOM PLAY AREA -->
+            <div id="gamePlayArea" class="w-full aspect-[4/3] max-h-[500px] bg-slate-950/90 rounded-3xl border-2 border-purple-500/30 shadow-2xl relative overflow-hidden flex items-center justify-center">
+                <canvas id="gameCanvas" class="w-full h-full block rounded-3xl"></canvas>
+                <div id="domGameOverlay" class="absolute inset-0 pointer-events-auto hidden flex-col items-center justify-center p-4"></div>
+            </div>
+
+            <!-- LIVE SCORE BAR BELOW GAME -->
+            <div id="hudScores" class="w-full grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3"></div>
+        </section>
+
+        <!-- 5. RESULTS SCREEN -->
+        <section id="screen-results" class="w-full hidden flex-col items-center text-center space-y-6">
+            <div class="bg-slate-900/90 backdrop-blur-lg p-6 rounded-3xl border border-white/10 shadow-2xl w-full max-w-xl space-y-4">
+                <h2 class="text-3xl font-black font-fun text-yellow-400">ROUND RESULTS! 🏆</h2>
+                <p id="roundCommentary" class="text-sm italic text-purple-300 font-medium">"Absolutely legendary... for the wrong reasons."</p>
+
+                <div id="resultsLeaderboard" class="space-y-2 py-2"></div>
+
+                <div class="text-xs text-slate-400 font-mono pt-2">Next round starting in <span id="resultsTimer">5</span>s...</div>
+            </div>
+        </section>
+
+        <!-- 6. FINAL PODIUM SCREEN -->
+        <section id="screen-final" class="w-full hidden flex-col items-center text-center space-y-6">
+            <div class="bg-slate-900/90 backdrop-blur-lg p-8 rounded-3xl border-2 border-yellow-400/50 shadow-2xl w-full max-w-2xl space-y-6">
+                <h2 class="text-4xl font-black font-fun text-yellow-400 tracking-wider">👑 CHAOS CHAMPIONS 👑</h2>
+
+                <div id="podiumContainer" class="flex justify-center items-end gap-3 h-52 pt-8 border-b border-slate-700/60 pb-4">
+                    <!-- Dynamic Podium Bars (2nd, 1st, 3rd) -->
+                </div>
+
+                <div id="finalScoresList" class="space-y-2 text-left max-w-md mx-auto"></div>
+
+                <button id="btnReturnMenu" class="btn-bounce bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-extrabold text-xl py-3.5 px-8 rounded-2xl glow-pink">
+                    🔄 PLAY AGAIN!
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full p-3 text-center text-xs text-slate-500 font-medium z-10">
+        CHAOS PARTY &copy; 2026 - Pure HTML5/CSS/JS Engine with Web Audio API & Tab Network Syncing
+    </footer>
+
+    <!-- GAME CODE SCRIPT -->
+    <script>
+    // --- AUDIO SYNTHESIZER MODULE ---
+    class AudioEngine {
+        constructor() {
+            this.ctx = null;
+            this.sfxMuted = false;
+            this.bgmMuted = false;
+            this.bgmOsc = null;
+            this.bgmTimer = null;
+        }
+
+        init() {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtx();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        playTone(freq, type = 'sine', duration = 0.1, vol = 0.2) {
+            if (this.sfxMuted || !this.ctx) return;
+            try {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        sfxClick() { this.playTone(600, 'sine', 0.05, 0.15); }
+        sfxCountdown() { this.playTone(440, 'triangle', 0.1, 0.2); }
+        sfxGo() { this.playTone(880, 'square', 0.25, 0.25); }
+        sfxSuccess() {
+            this.playTone(523.25, 'sine', 0.1, 0.2);
+            setTimeout(() => this.playTone(659.25, 'sine', 0.15, 0.2), 100);
+        }
+        sfxError() {
+            this.playTone(180, 'sawtooth', 0.2, 0.3);
+            setTimeout(() => this.playTone(130, 'sawtooth', 0.2, 0.3), 100);
+        }
+        sfxExplode() {
+            if (this.sfxMuted || !this.ctx) return;
+            try {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+            } catch(e) {}
+        }
+
+        toggleSFX() {
+            this.sfxMuted = !this.sfxMuted;
+            return !this.sfxMuted;
+        }
+
+        toggleBGM() {
+            this.bgmMuted = !this.bgmMuted;
+            if (this.bgmMuted) {
+                if (this.bgmTimer) clearInterval(this.bgmTimer);
+            } else {
+                this.startBGM();
+            }
+            return !this.bgmMuted;
+        }
+
+        startBGM() {
+            if (this.bgmMuted || this.bgmTimer) return;
+            const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00];
+            let idx = 0;
+            this.bgmTimer = setInterval(() => {
+                if (!this.bgmMuted && this.ctx) {
+                    this.playTone(notes[idx % notes.length], 'sine', 0.15, 0.05);
+                    idx++;
+                }
+            }, 300);
+        }
+    }
+
+    const audio = new AudioEngine();
+
+    // --- GAME DATA & CONSTANTS ---
+    const AVATARS = [
+        { id: 'cat', emoji: '🐱', name: 'Derpy Cat' },
+        { id: 'duck', emoji: '🦆', name: 'Turbo Duck' },
+        { id: 'blob', emoji: '🫠', name: 'Chaos Blob' },
+        { id: 'bot', emoji: '🤖', name: 'Robo Goober' },
+        { id: 'dog', emoji: '🧙‍♂️', name: 'Wizard Dog' }
+    ];
+
+    const COLORS = [
+        '#ff2a75', '#00f0ff', '#ffd60a', '#a855f7', '#10b981'
+    ];
+
+    const RANDOM_NAMES = [
+        "SaltyNoodle", "LordGigaDerp", "ChaosSponge", "UnstoppableSpoon",
+        "CaptainWobble", "NeonPickle", "PixelPanda", "TurboToaster"
+    ];
+
+    const SURPRISE_EVENTS = [
+        { id: 'NONE', title: 'STANDARD ROUND', desc: 'Normal conditions!' },
+        { id: 'DOUBLE', title: '⭐ DOUBLE POINTS!', desc: 'All scores earned this round are doubled!' },
+        { id: 'SPEED', title: '⚡ SPEED MODE!', desc: 'Game speed is boosted by 50%!' },
+        { id: 'REVERSED', title: '🔄 CONTROLS REVERSED!', desc: 'Left is right, right is left!' },
+        { id: 'TINY', title: '🔎 EVERYONE IS TINY!', desc: 'Player size reduced!' }
+    ];
+
+    const POWERUPS = [
+        { id: 'SPEED', name: 'Speed Boost', emoji: '⚡' },
+        { id: 'SHIELD', name: 'Shield', emoji: '🛡' },
+        { id: 'DOUBLE', name: '2x Points', emoji: '⭐' }
+    ];
+
+    // Core Game State
+    const GameState = {
+        MENU: 'MENU',
+        LOBBY: 'LOBBY',
+        COUNTDOWN: 'COUNTDOWN',
+        PLAYING: 'PLAYING',
+        RESULTS: 'RESULTS',
+        FINAL: 'FINAL'
+    };
+
+    let currentState = GameState.MENU;
+    let roomCode = '';
+    let isHost = false;
+    let localPlayerId = 'p_' + Math.random().toString(36).substr(2, 6);
+    let players = [];
+    let currentRound = 0;
+    const TOTAL_ROUNDS = 5;
+    let currentGameIndex = -1;
+    let activeModifier = SURPRISE_EVENTS[0];
+    let gameTimer = null;
+    let gameTimeLeft = 20;
+    let broadcastChannel = null;
+    let activeMinigameInstance = null;
+
+    // --- BACKGROUND PARTICLE SYSTEM ---
+    const bgCanvas = document.getElementById('bgCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let bgParticles = [];
+
+    function resizeBgCanvas() {
+        bgCanvas.width = window.innerWidth;
+        bgCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeBgCanvas);
+    resizeBgCanvas();
+
+    for (let i = 0; i < 40; i++) {
+        bgParticles.push({
+            x: Math.random() * bgCanvas.width,
+            y: Math.random() * bgCanvas.height,
+            size: Math.random() * 6 + 2,
+            color: COLORS[Math.floor(Math.random() * COLORS.length)],
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: (Math.random() - 0.5) * 1.5
+        });
+    }
+
+    function renderBgParticles() {
+        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+        bgParticles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0) p.x = bgCanvas.width;
+            if (p.x > bgCanvas.width) p.x = 0;
+            if (p.y < 0) p.y = bgCanvas.height;
+            if (p.y > bgCanvas.height) p.y = 0;
+
+            bgCtx.fillStyle = p.color;
+            bgCtx.globalAlpha = 0.4;
+            bgCtx.beginPath();
+            bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            bgCtx.fill();
+        });
+        requestAnimationFrame(renderBgParticles);
+    }
+    renderBgParticles();
+
+    // --- NETWORK & LOBBY SYNC SYSTEM ---
+    function initBroadcastNetwork(code) {
+        if (broadcastChannel) broadcastChannel.close();
+        broadcastChannel = new BroadcastChannel(' chaos_party_' + code);
+        broadcastChannel.onmessage = (event) => {
+            const data = event.data;
+            if (!data) return;
+
+            switch(data.type) {
+                case 'PLAYER_JOIN':
+                    if (isHost) {
+                        if (!players.some(p => p.id === data.player.id)) {
+                            players.push(data.player);
+                            syncLobbyState();
+                        }
+                    }
+                    break;
+                case 'STATE_SYNC':
+                    if (!isHost) {
+                        players = data.players;
+                        currentRound = data.currentRound;
+                        if (data.state !== currentState) {
+                            switchState(data.state, false);
+                        }
+                        updateLobbyUI();
+                    }
+                    break;
+                case 'SCORE_UPDATE':
+                    const p = players.find(x => x.id === data.playerId);
+                    if (p) p.score += data.points;
+                    break;
+            }
+        };
+    }
+
+    function syncLobbyState() {
+        if (isHost && broadcastChannel) {
+            broadcastChannel.postMessage({
+                type: 'STATE_SYNC',
+                players: players,
+                currentRound: currentRound,
+                state: currentState
+            });
+        }
+    }
+
+    // --- USER INTERFACE CONTROL ---
+    let selectedAvatar = AVATARS[0].id;
+    let selectedColor = COLORS[0];
+
+    function setupMenuUI() {
+        // Build Avatar Buttons
+        const avatarPicker = document.getElementById('avatarPicker');
+        avatarPicker.innerHTML = '';
+        AVATARS.forEach(av => {
+            const btn = document.createElement('button');
+            btn.className = `p-2 text-2xl rounded-xl border-2 transition ${selectedAvatar === av.id ? 'border-cyan-400 bg-cyan-950/50' : 'border-slate-700 bg-slate-800'}`;
+            btn.innerText = av.emoji;
+            btn.onclick = () => {
+                audio.init();
+                audio.sfxClick();
+                selectedAvatar = av.id;
+                setupMenuUI();
+            };
+            avatarPicker.appendChild(btn);
+        });
+
+        // Build Color Buttons
+        const colorPicker = document.getElementById('colorPicker');
+        colorPicker.innerHTML = '';
+        COLORS.forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = `w-8 h-8 rounded-full border-2 transition ${selectedColor === c ? 'border-white scale-110' : 'border-transparent'}`;
+            btn.style.backgroundColor = c;
+            btn.onclick = () => {
+                audio.init();
+                audio.sfxClick();
+                selectedColor = c;
+                setupMenuUI();
+            };
+            colorPicker.appendChild(btn);
+        });
+    }
+
+    document.getElementById('randomNameBtn').onclick = () => {
+        audio.init();
+        audio.sfxClick();
+        const rand = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+        document.getElementById('playerNameInput').value = rand;
+    };
+
+    document.getElementById('playerNameInput').value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+
+    function getLocalPlayerData() {
+        return {
+            id: localPlayerId,
+            name: document.getElementById('playerNameInput').value.trim() || 'Player',
+            avatar: selectedAvatar,
+            color: selectedColor,
+            score: 0,
+            isBot: false,
+            powerup: null
+        };
+    }
+
+    function switchState(newState, broadcast = true) {
+        currentState = newState;
+        document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('main > section').forEach(s => s.classList.remove('flex'));
+
+        const targetScreen = document.getElementById(`screen-${newState.toLowerCase()}`);
+        if (targetScreen) {
+            targetScreen.classList.remove('hidden');
+            targetScreen.classList.add('flex');
+        }
+
+        if (broadcast && isHost) syncLobbyState();
+
+        if (newState === GameState.LOBBY) updateLobbyUI();
+        if (newState === GameState.RESULTS) renderResultsUI();
+        if (newState === GameState.FINAL) renderFinalUI();
+    }
+
+    // Button Listeners
+    document.getElementById('btnPlayBots').onclick = () => {
+        audio.init();
+        audio.sfxClick();
+        isHost = true;
+        roomCode = 'BOTS';
+        players = [getLocalPlayerData()];
+        // Add 3 Bots
+        for (let i = 1; i <= 3; i++) {
+            const av = AVATARS[i % AVATARS.length];
+            players.push({
+                id: 'bot_' + i,
+                name: 'Bot ' + av.name.split(' ')[0],
+                avatar: av.id,
+                color: COLORS[i % COLORS.length],
+                score: 0,
+                isBot: true,
+                powerup: null
+            });
+        }
+        document.getElementById('roomCodeBadge').classList.remove('hidden');
+        document.getElementById('displayRoomCode').innerText = roomCode;
+        switchState(GameState.LOBBY);
+    };
+
+    document.getElementById('btnCreateRoom').onclick = () => {
+        audio.init();
+        audio.sfxClick();
+        isHost = true;
+        roomCode = Math.floor(1000 + Math.random() * 9000).toString();
+        players = [getLocalPlayerData()];
+        initBroadcastNetwork(roomCode);
+        document.getElementById('roomCodeBadge').classList.remove('hidden');
+        document.getElementById('displayRoomCode').innerText = roomCode;
+        switchState(GameState.LOBBY);
+    };
+
+    document.getElementById('btnJoinRoom').onclick = () => {
+        audio.init();
+        audio.sfxClick();
+        const code = prompt('Enter 4-Digit Room Code:');
+        if (code) {
+            isHost = false;
+            roomCode = code;
+            initBroadcastNetwork(roomCode);
+            document.getElementById('roomCodeBadge').classList.remove('hidden');
+            document.getElementById('displayRoomCode').innerText = roomCode;
+            broadcastChannel.postMessage({
+                type: 'PLAYER_JOIN',
+                player: getLocalPlayerData()
+            });
+            switchState(GameState.LOBBY);
+        }
+    };
+
+    document.getElementById('addBotBtn').onclick = () => {
+        if (!isHost) return;
+        audio.sfxClick();
+        if (players.length >= 6) return;
+        const i = players.length;
+        const av = AVATARS[i % AVATARS.length];
+        players.push({
+            id: 'bot_' + Date.now(),
+            name: 'Bot ' + av.name.split(' ')[0],
+            avatar: av.id,
+            color: COLORS[i % COLORS.length],
+            score: 0,
+            isBot: true,
+            powerup: null
+        });
+        updateLobbyUI();
+        syncLobbyState();
+    };
+
+    document.getElementById('btnLeaveLobby').onclick = () => {
+        audio.sfxClick();
+        switchState(GameState.MENU);
+        document.getElementById('roomCodeBadge').classList.add('hidden');
+    };
+
+    document.getElementById('btnStartGame').onclick = () => {
+        if (!isHost) return;
+        audio.sfxClick();
+        currentRound = 0;
+        players.forEach(p => p.score = 0);
+        startNextRoundSequence();
+    };
+
+    document.getElementById('btnReturnMenu').onclick = () => {
+        audio.sfxClick();
+        switchState(GameState.MENU);
+    };
+
+    // Toggle Audio Buttons
+    document.getElementById('sfxToggle').onclick = () => {
+        const active = audio.toggleSFX();
+        document.getElementById('sfxToggle').innerText = active ? '🔊' : '🔇';
+    };
+
+    document.getElementById('bgmToggle').onclick = () => {
+        audio.init();
+        const active = audio.toggleBGM();
+        document.getElementById('bgmToggle').innerText = active ? '🎵' : '🔇';
+    };
+
+    function updateLobbyUI() {
+        document.getElementById('lobbyRoomCodeDisplay').innerText = roomCode;
+        const list = document.getElementById('lobbyPlayerList');
+        list.innerHTML = '';
+
+        players.forEach(p => {
+            const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+            const card = document.createElement('div');
+            card.className = "flex items-center gap-3 bg-slate-800/80 p-3 rounded-2xl border border-white/5";
+            card.style.borderLeft = `5px solid ${p.color}`;
+            card.innerHTML = `
+                <span class="text-3xl">${av.emoji}</span>
+                <div class="text-left flex-1">
+                    <div class="font-bold text-sm text-white flex items-center gap-1">
+                        ${p.name}
+                        ${p.id === localPlayerId ? '<span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded">YOU</span>' : ''}
+                        ${p.isBot ? '<span class="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">BOT</span>' : ''}
+                    </div>
+                    <div class="text-xs text-slate-400">Ready for Chaos</div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+        document.getElementById('btnStartGame').style.display = isHost ? 'block' : 'none';
+        document.getElementById('addBotBtn').style.display = isHost ? 'block' : 'none';
+    }
+
+    // --- ROUND LOOP & MINIGAME MANAGER ---
+    function startNextRoundSequence() {
+        currentRound++;
+        if (currentRound > TOTAL_ROUNDS) {
+            switchState(GameState.FINAL);
+            return;
+        }
+
+        // Pick Random Minigame and Modifier
+        currentGameIndex = Math.floor(Math.random() * MINIGAMES.length);
+        if (Math.random() < 0.4) {
+            activeModifier = SURPRISE_EVENTS[1 + Math.floor(Math.random() * (SURPRISE_EVENTS.length - 1))];
+        } else {
+            activeModifier = SURPRISE_EVENTS[0];
+        }
+
+        const minigame = MINIGAMES[currentGameIndex];
+
+        // Setup Countdown Screen UI
+        document.getElementById('gameIconDisplay').innerText = minigame.icon;
+        document.getElementById('gameTitleDisplay').innerText = minigame.title;
+        document.getElementById('gameInstructionsDisplay').innerText = minigame.instructions;
+
+        const modBadge = document.getElementById('modifierBadge');
+        if (activeModifier.id !== 'NONE') {
+            modBadge.classList.remove('hidden');
+            document.getElementById('modifierText').innerText = activeModifier.title;
+        } else {
+            modBadge.classList.add('hidden');
+        }
+
+        switchState(GameState.COUNTDOWN);
+
+        let count = 3;
+        document.getElementById('countdownNumber').innerText = count;
+        audio.sfxCountdown();
+
+        const countInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                document.getElementById('countdownNumber').innerText = count;
+                audio.sfxCountdown();
+            } else {
+                clearInterval(countInterval);
+                audio.sfxGo();
+                launchMinigame();
+            }
+        }, 1000);
+    }
+
+    function launchMinigame() {
+        switchState(GameState.PLAYING);
+        document.getElementById('hudRound').innerText = `${currentRound}/${TOTAL_ROUNDS}`;
+        document.getElementById('hudMinigameName').innerText = MINIGAMES[currentGameIndex].title;
+
+        // Clear Canvas & DOM
+        const canvas = document.getElementById('gameCanvas');
+        const domOverlay = document.getElementById('domGameOverlay');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        domOverlay.innerHTML = '';
+        domOverlay.classList.add('hidden');
+
+        // Start Minigame Instance
+        const minigameClass = MINIGAMES[currentGameIndex].impl;
+        activeMinigameInstance = new minigameClass(canvas, domOverlay, players, activeModifier);
+        activeMinigameInstance.start();
+
+        // Game Timer
+        gameTimeLeft = activeModifier.id === 'SPEED' ? 12 : 20;
+        document.getElementById('hudTimer').innerText = gameTimeLeft;
+
+        if (gameTimer) clearInterval(gameTimer);
+        gameTimer = setInterval(() => {
+            gameTimeLeft--;
+            document.getElementById('hudTimer').innerText = gameTimeLeft;
+            updateHudScores();
+
+            if (gameTimeLeft <= 0) {
+                endMinigame();
+            }
+        }, 1000);
+    }
+
+    function endMinigame() {
+        clearInterval(gameTimer);
+        if (activeMinigameInstance) {
+            activeMinigameInstance.destroy();
+            activeMinigameInstance = null;
+        }
+
+        // Apply Double Points Modifier if Active
+        if (activeModifier.id === 'DOUBLE') {
+            players.forEach(p => p.score *= 2);
+        }
+
+        document.body.classList.add('shake-screen');
+        setTimeout(() => document.body.classList.remove('shake-screen'), 400);
+
+        audio.sfxSuccess();
+        switchState(GameState.RESULTS);
+    }
+
+    function updateHudScores() {
+        const hudScores = document.getElementById('hudScores');
+        hudScores.innerHTML = '';
+        players.forEach(p => {
+            const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+            const div = document.createElement('div');
+            div.className = "bg-slate-900/80 p-2 rounded-xl border border-white/10 flex items-center gap-2";
+            div.style.borderBottom = `3px solid ${p.color}`;
+            div.innerHTML = `
+                <span class="text-xl">${av.emoji}</span>
+                <div class="truncate text-left flex-1">
+                    <div class="text-[10px] text-slate-400 font-bold truncate">${p.name}</div>
+                    <div class="text-xs font-mono font-black text-yellow-400">${p.score} pt</div>
+                </div>
+            `;
+            hudScores.appendChild(div);
+        });
+    }
+
+    function renderResultsUI() {
+        const sorted = [...players].sort((a, b) => b.score - a.score);
+        const leaderboard = document.getElementById('resultsLeaderboard');
+        leaderboard.innerHTML = '';
+
+        const commentaryList = [
+            "Absolutely legendary... for the wrong reasons!",
+            "THE CHAOS CHAMPION HAS RISEN!",
+            "Bro was NOT ready for that minigame!",
+            "Pure skill or complete luck? We'll never know.",
+            "Unstoppable performance!"
+        ];
+        document.getElementById('roundCommentary').innerText = `"${commentaryList[Math.floor(Math.random() * commentaryList.length)]}"`;
+
+        sorted.forEach((p, index) => {
+            const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+            const card = document.createElement('div');
+            card.className = "flex justify-between items-center bg-slate-800/80 px-4 py-2.5 rounded-2xl border border-white/5";
+            card.style.borderLeft = `5px solid ${p.color}`;
+            card.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="font-black font-mono text-lg text-slate-400">#${index + 1}</span>
+                    <span class="text-2xl">${av.emoji}</span>
+                    <span class="font-bold text-sm">${p.name}</span>
+                </div>
+                <span class="font-mono font-black text-yellow-400 text-base">${p.score} pts</span>
+            `;
+            leaderboard.appendChild(card);
+        });
+
+        let timer = 5;
+        document.getElementById('resultsTimer').innerText = timer;
+        const resInterval = setInterval(() => {
+            timer--;
+            document.getElementById('resultsTimer').innerText = timer;
+            if (timer <= 0) {
+                clearInterval(resInterval);
+                startNextRoundSequence();
+            }
+        }, 1000);
+    }
+
+    function renderFinalUI() {
+        const sorted = [...players].sort((a, b) => b.score - a.score);
+        const podium = document.getElementById('podiumContainer');
+        podium.innerHTML = '';
+
+        // Order for podium display: 2nd, 1st, 3rd
+        const podiumOrder = [sorted[1], sorted[0], sorted[2]].filter(Boolean);
+
+        podiumOrder.forEach(p => {
+            const isFirst = p === sorted[0];
+            const isSecond = p === sorted[1];
+            const height = isFirst ? 'h-44' : isSecond ? 'h-32' : 'h-24';
+            const bg = isFirst ? 'bg-amber-400 text-slate-950' : isSecond ? 'bg-slate-300 text-slate-950' : 'bg-amber-700 text-white';
+            const av = AVATARS.find(a => a.id === p.avatar) || AVATARS[0];
+
+            const bar = document.createElement('div');
+            bar.className = `w-24 ${height} ${bg} rounded-t-2xl flex flex-col items-center justify-between p-2 shadow-xl relative animate-bounce`;
+            bar.innerHTML = `
+                <div class="absolute -top-10 text-3xl">${isFirst ? '👑' : ''} ${av.emoji}</div>
+                <span class="font-black text-xs uppercase mt-2">${p.name}</span>
+                <span class="font-mono font-black text-sm">${p.score} pts</span>
+            `;
+            podium.appendChild(bar);
+        });
+
+        const list = document.getElementById('finalScoresList');
+        list.innerHTML = '';
+        sorted.forEach((p, idx) => {
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center bg-slate-800/60 p-2 px-4 rounded-xl border border-white/5 text-sm";
+            div.innerHTML = `<span>#${idx + 1} ${p.name}</span> <span class="font-mono font-bold text-yellow-400">${p.score} pts</span>`;
+            list.appendChild(div);
+        });
+    }
+
+    // --- 10 MINIGAME ENGINE IMPLEMENTATIONS ---
+
+    // 1. BUTTON PANIC
+    class MinigameButtonPanic {
+        constructor(canvas, dom, players, modifier) {
+            this.dom = dom;
+            this.players = players;
+            this.modifier = modifier;
+            this.timer = null;
+        }
+        start() {
+            this.dom.classList.remove('hidden');
+            this.dom.classList.add('flex');
+            this.spawn();
+        }
+        spawn() {
+            this.dom.innerHTML = '';
+            const isFake = Math.random() < 0.3;
+            const btn = document.createElement('button');
+            btn.className = `btn-bounce px-8 py-6 rounded-3xl font-black font-fun text-2xl shadow-2xl transition transform absolute ${isFake ? 'bg-red-600 glow-pink' : 'bg-emerald-500 glow-cyan'}`;
+            btn.style.left = `${10 + Math.random() * 70}%`;
+            btn.style.top = `${10 + Math.random() * 70}%`;
+            btn.innerText = isFake ? "DON'T CLICK ME!" : "CLICK ME! 🔥";
+
+            btn.onclick = () => {
+                if (isFake) {
+                    audio.sfxError();
+                    const p = this.players.find(x => x.id === localPlayerId);
+                    if (p) p.score = Math.max(0, p.score - 5);
+                } else {
+                    audio.sfxSuccess();
+                    const p = this.players.find(x => x.id === localPlayerId);
+                    if (p) p.score += 10;
+                }
+                this.botSimulate();
+                this.spawn();
+            };
+            this.dom.appendChild(btn);
+        }
+        botSimulate() {
+            this.players.filter(p => p.isBot).forEach(b => {
+                if (Math.random() < 0.7) b.score += 10;
+            });
+        }
+        destroy() {
+            this.dom.innerHTML = '';
+            this.dom.classList.add('hidden');
+        }
+    }
+
+    // 2. DODGE THE DOOM
+    class MinigameDodgeDoom {
+        constructor(canvas, dom, players, modifier) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.players = players;
+            this.modifier = modifier;
+            this.active = true;
+            this.objects = [];
+            this.positions = players.map((p, i) => ({
+                id: p.id,
+                x: (canvas.width / (players.length + 1)) * (i + 1),
+                y: canvas.height - 40,
+                color: p.color,
+                isBot: p.isBot,
+                alive: true
+            }));
+            this.bindEvents();
+        }
+        bindEvents() {
+            this.onMove = (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+                const p = this.positions.find(x => x.id === localPlayerId);
+                if (p) p.x = x;
+            };
+            window.addEventListener('mousemove', this.onMove);
+            window.addEventListener('touchmove', this.onMove);
+        }
+        start() {
+            let frame = 0;
+            const loop = () => {
+                if (!this.active) return;
+                frame++;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (frame % 15 === 0) {
+                    this.objects.push({
+                        x: Math.random() * this.canvas.width,
+                        y: 0,
+                        vy: 4 + Math.random() * 4,
+                        size: 20 + Math.random() * 15
+                    });
+                }
+
+                // Move & Draw Falling Hazards
+                this.ctx.fillStyle = '#ff2a75';
+                this.objects.forEach(o => {
+                    o.y += o.vy;
+                    this.ctx.beginPath();
+                    this.ctx.arc(o.x, o.y, o.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+
+                // Update & Render Players
+                this.positions.forEach(p => {
+                    if (!p.alive) return;
+                    if (p.isBot) {
+                        p.x += (Math.random() - 0.5) * 6;
+                    }
+                    p.x = Math.max(20, Math.min(this.canvas.width - 20, p.x));
+
+                    // Collision Check
+                    this.objects.forEach(o => {
+                        const dist = Math.hypot(p.x - o.x, p.y - o.y);
+                        if (dist < o.size + 15) {
+                            p.alive = false;
+                            audio.sfxExplode();
+                        }
+                    });
+
+                    if (p.alive) {
+                        const playerObj = this.players.find(x => x.id === p.id);
+                        if (playerObj) playerObj.score += 1;
+                        this.ctx.fillStyle = p.color;
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, 18, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    }
+                });
+
+                requestAnimationFrame(loop);
+            };
+            loop();
+        }
+        destroy() {
+            this.active = false;
+            window.removeEventListener('mousemove', this.onMove);
+            window.removeEventListener('touchmove', this.onMove);
+        }
+    }
+
+    // 3. COLOR CHAOS
+    class MinigameColorChaos {
+        constructor(canvas, dom, players, modifier) {
+            this.dom = dom;
+            this.players = players;
+        }
+        start() {
+            this.dom.classList.remove('hidden');
+            this.dom.classList.add('flex');
+            this.nextWave();
+        }
+        nextWave() {
+            this.dom.innerHTML = '';
+            const colorNames = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'PURPLE'];
+            const colorHex = ['#ff2a75', '#00f0ff', '#10b981', '#ffd60a', '#a855f7'];
+
+            const textIdx = Math.floor(Math.random() * colorNames.length);
+            let colorIdx = Math.floor(Math.random() * colorHex.length);
+            while (colorIdx === textIdx) colorIdx = Math.floor(Math.random() * colorHex.length);
+
+            const title = document.createElement('div');
+            title.className = "text-5xl font-black font-fun mb-8 animate-bounce";
+            title.style.color = colorHex[colorIdx];
+            title.innerText = colorNames[textIdx];
+            this.dom.appendChild(title);
+
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-2 gap-4 w-full max-w-sm";
+
+            colorNames.forEach((name, i) => {
+                const btn = document.createElement('button');
+                btn.className = "btn-bounce py-4 rounded-2xl font-black text-xl text-white border-2 border-white/10";
+                btn.style.backgroundColor = colorHex[i];
+                btn.innerText = name;
+                btn.onclick = () => {
+                    if (i === colorIdx) {
+                        audio.sfxSuccess();
+                        const p = this.players.find(x => x.id === localPlayerId);
+                        if (p) p.score += 15;
+                    } else {
+                        audio.sfxError();
+                    }
+                    this.players.filter(p => p.isBot).forEach(b => {
+                        if (Math.random() < 0.6) b.score += 15;
+                    });
+                    this.nextWave();
+                };
+                grid.appendChild(btn);
+            });
+            this.dom.appendChild(grid);
+        }
+        destroy() {
+            this.dom.innerHTML = '';
+            this.dom.classList.add('hidden');
+        }
+    }
+
+    // 4. QUICK DRAW
+    class MinigameQuickDraw {
+        constructor(canvas, dom, players, modifier) {
+            this.dom = dom;
+            this.players = players;
+            this.ready = false;
+        }
+        start() {
+            this.dom.classList.remove('hidden');
+            this.dom.classList.add('flex');
+            this.dom.innerHTML = `<div id="qdBox" class="w-full h-full bg-red-600 rounded-3xl flex items-center justify-center font-black font-fun text-4xl text-white cursor-pointer select-none">WAIT FOR GREEN...</div>`;
+
+            const box = document.getElementById('qdBox');
+            const waitTime = 2000 + Math.random() * 3000;
+
+            this.timer = setTimeout(() => {
+                this.ready = true;
+                box.classList.remove('bg-red-600');
+                box.classList.add('bg-emerald-500');
+                box.innerText = "STRIKE NOW! ⚡";
+                audio.sfxGo();
+            }, waitTime);
+
+            box.onclick = () => {
+                if (!this.ready) {
+                    audio.sfxError();
+                    box.innerText = "TOO EARLY! BRO WAS NOT READY! 💀";
+                    const p = this.players.find(x => x.id === localPlayerId);
+                    if (p) p.score = Math.max(0, p.score - 10);
+                } else {
+                    audio.sfxSuccess();
+                    box.innerText = "PERFECT REACTION!";
+                    const p = this.players.find(x => x.id === localPlayerId);
+                    if (p) p.score += 30;
+                }
+                this.players.filter(p => p.isBot).forEach(b => {
+                    if (Math.random() < 0.5) b.score += 20;
+                });
+            };
+        }
+        destroy() {
+            if (this.timer) clearTimeout(this.timer);
+            this.dom.innerHTML = '';
+            this.dom.classList.add('hidden');
+        }
+    }
+
+    // 5. MEMORY MADNESS
+    class MinigameMemoryMadness {
+        constructor(canvas, dom, players, modifier) {
+            this.dom = dom;
+            this.players = players;
+            this.symbols = ['🐱', '🦆', '🫠', '🤖'];
+            this.sequence = [];
+            this.userStep = 0;
+        }
+        start() {
+            this.dom.classList.remove('hidden');
+            this.dom.classList.add('flex');
+            this.nextRound();
+        }
+        nextRound() {
+            this.sequence.push(Math.floor(Math.random() * 4));
+            this.userStep = 0;
+            this.playSequence();
+        }
+        playSequence() {
+            this.dom.innerHTML = `<div id="memDisplay" class="text-6xl mb-6 h-20 flex items-center">Get Ready...</div>`;
+            const display = document.getElementById('memDisplay');
+
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < this.sequence.length) {
+                    display.innerText = this.symbols[this.sequence[i]];
+                    audio.sfxClick();
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    display.innerText = "YOUR TURN!";
+                    this.renderButtons();
+                }
+            }, 800);
+        }
+        renderButtons() {
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-2 gap-4 w-full max-w-xs";
+            this.symbols.forEach((sym, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "btn-bounce bg-slate-800 border-2 border-purple-500/40 p-6 rounded-2xl text-4xl";
+                btn.innerText = sym;
+                btn.onclick = () => {
+                    if (idx === this.sequence[this.userStep]) {
+                        audio.sfxSuccess();
+                        this.userStep++;
+                        if (this.userStep >= this.sequence.length) {
+                            const p = this.players.find(x => x.id === localPlayerId);
+                            if (p) p.score += 20;
+                            this.players.filter(b => b.isBot).forEach(b => b.score += 15);
+                            setTimeout(() => this.nextRound(), 500);
+                        }
+                    } else {
+                        audio.sfxError();
+                        this.dom.innerHTML = `<div class="text-2xl font-bold text-red-400">WRONG SEQUENCE! ❌</div>`;
+                    }
+                };
+                grid.appendChild(btn);
+            });
+            this.dom.appendChild(grid);
+        }
+        destroy() {
+            this.dom.innerHTML = '';
+            this.dom.classList.add('hidden');
+        }
+    }
+
+    // 6. BOMB PASS
+    class MinigameBombPass {
+        constructor(canvas, dom, players, modifier) {
+            this.dom = dom;
+            this.players = players;
+            this.holderIndex = 0;
+        }
+        start() {
+            this.dom.classList.remove('hidden');
+            this.dom.classList.add('flex');
+            this.render();
+        }
+        render() {
+            const holder = this.players[this.holderIndex];
+            const isLocal = holder.id === localPlayerId;
+            const av = AVATARS.find(a => a.id === holder.avatar) || AVATARS[0];
+
+            this.dom.innerHTML = `
+                <div class="text-center space-y-4">
+                    <div class="text-7xl animate-bounce">💣</div>
+                    <div class="text-xl font-bold">Bomb Held By: <span class="text-yellow-400 font-black">${holder.name}</span> ${av.emoji}</div>
+                    ${isLocal ? `
+                        <button id="passBtn" class="btn-bounce bg-red-600 hover:bg-red-500 text-white font-extrabold text-2xl px-8 py-4 rounded-2xl glow-pink">
+                            TAP TO PASS BOMB! 💥
+                        </button>
+                    ` : `
+                        <div class="text-slate-400 font-mono text-sm">Wait for them to pass it...</div>
+                    `}
+                </div>
+            `;
+
+            if (isLocal) {
+                document.getElementById('passBtn').onclick = () => {
+                    audio.sfxClick();
+                    this.pass();
+                };
+            } else if (holder.isBot) {
+                setTimeout(() => this.pass(), 800 + Math.random() * 1000);
+            }
+        }
+        pass() {
+            this.holderIndex = (this.holderIndex + 1) % this.players.length;
+            const p = this.players.find(x => x.id === localPlayerId);
+            if (p) p.score += 5;
+            this.render();
+        }
+        destroy() {
+            const exploded = this.players[this.holderIndex];
+            if (exploded) exploded.score = Math.max(0, exploded.score - 20);
+            this.dom.innerHTML = '';
+            this.dom.classList.add('hidden');
+        }
+    }
+
+    // 7. METEOR MAYHEM
+    class MinigameMeteorMayhem {
+        constructor(canvas, dom, players, modifier) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.players = players;
+            this.active = true;
+            this.meteors = [];
+        }
+        start() {
+            let frame = 0;
+            const loop = () => {
+                if (!this.active) return;
+                frame++;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (frame % 20 === 0) {
+                    this.meteors.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        radius: 5,
+                        maxRadius: 30 + Math.random() * 20,
+                        warning: 30
+                    });
+                }
+
+                this.meteors.forEach((m, idx) => {
+                    if (m.warning > 0) {
+                        m.warning--;
+                        this.ctx.strokeStyle = 'rgba(255, 42, 117, 0.6)';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.arc(m.x, m.y, m.maxRadius, 0, Math.PI * 2);
+                        this.ctx.stroke();
+                    } else {
+                        m.radius += 2;
+                        this.ctx.fillStyle = '#ff2a75';
+                        this.ctx.beginPath();
+                        this.ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+                        this.ctx.fill();
+
+                        if (m.radius >= m.maxRadius) {
+                            this.meteors.splice(idx, 1);
+                        }
+                    }
+                });
+
+                this.players.forEach(p => p.score += 1);
+                requestAnimationFrame(loop);
+            };
+            loop();
+        }
+        destroy() { this.active = false; }
+    }
+
+    // 8. MATH SPEEDRUN
+    class MinigameMathSpeedrun {
+        constructor(canvas, dom, players, modifier) {
+            this.dom = dom;
+            this.players = players;
+        }
+        start() {
+            this.dom.classList.remove('hidden');
+            this.dom.classList.add('flex');
+            this.nextEq();
+        }
+        nextEq() {
+            this.dom.innerHTML = '';
+            const a = Math.floor(1 + Math.random() * 12);
+            const b = Math.floor(1 + Math.random() * 12);
+            const ans = a + b;
+
+            const eq = document.createElement('div');
+            eq.className = "text-5xl font-black font-fun mb-6 text-yellow-400";
+            eq.innerText = `${a} + ${b} = ?`;
+            this.dom.appendChild(eq);
+
+            const options = [ans, ans + 2, ans - 1, ans + 4].sort(() => Math.random() - 0.5);
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-2 gap-4 w-full max-w-xs";
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "btn-bounce bg-slate-800 border-2 border-cyan-400/30 p-4 rounded-2xl text-2xl font-bold";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    if (opt === ans) {
+                        audio.sfxSuccess();
+                        const p = this.players.find(x => x.id === localPlayerId);
+                        if (p) p.score += 15;
+                    } else {
+                        audio.sfxError();
+                    }
+                    this.players.filter(b => b.isBot).forEach(b => {
+                        if (Math.random() < 0.6) b.score += 15;
+                    });
+                    this.nextEq();
+                };
+                grid.appendChild(btn);
+            });
+            this.dom.appendChild(grid);
+        }
+        destroy() {
+            this.dom.innerHTML = '';
+            this.dom.classList.add('hidden');
+        }
+    }
+
+    // 9. TREASURE HUNT
+    class MinigameTreasureHunt {
+        constructor(canvas, dom, players, modifier) {
+            this.dom = dom;
+            this.players = players;
+        }
+        start() {
+            this.dom.classList.remove('hidden');
+            this.dom.classList.add('flex');
+            this.renderGrid();
+        }
+        renderGrid() {
+            this.dom.innerHTML = '';
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-4 gap-3 w-full max-w-xs";
+
+            const winningIdx = Math.floor(Math.random() * 12);
+
+            for (let i = 0; i < 12; i++) {
+                const btn = document.createElement('button');
+                btn.className = "btn-bounce bg-slate-800 border-2 border-amber-500/30 p-5 rounded-2xl text-3xl";
+                btn.innerText = "📦";
+                btn.onclick = () => {
+                    if (i === winningIdx) {
+                        btn.innerText = "💎";
+                        audio.sfxSuccess();
+                        const p = this.players.find(x => x.id === localPlayerId);
+                        if (p) p.score += 25;
+                        setTimeout(() => this.renderGrid(), 600);
+                    } else {
+                        btn.innerText = "💥";
+                        audio.sfxError();
+                        btn.disabled = true;
+                    }
+                    this.players.filter(b => b.isBot).forEach(b => {
+                        if (Math.random() < 0.3) b.score += 15;
+                    });
+                };
+                grid.appendChild(btn);
+            }
+            this.dom.appendChild(grid);
+        }
+        destroy() {
+            this.dom.innerHTML = '';
+            this.dom.classList.add('hidden');
+        }
+    }
+
+    // 10. FLOOR IS LAVA
+    class MinigameFloorLava {
+        constructor(canvas, dom, players, modifier) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.players = players;
+            this.active = true;
+            this.safeTile = Math.floor(Math.random() * 4);
+        }
+        start() {
+            const loop = () => {
+                if (!this.active) return;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                const w = this.canvas.width / 2;
+                const h = this.canvas.height / 2;
+
+                for (let i = 0; i < 4; i++) {
+                    const x = (i % 2) * w;
+                    const y = Math.floor(i / 2) * h;
+                    this.ctx.fillStyle = (i === this.safeTile) ? '#10b981' : '#ff2a75';
+                    this.ctx.fillRect(x + 5, y + 5, w - 10, h - 10);
+                }
+
+                this.players.forEach(p => p.score += 1);
+                requestAnimationFrame(loop);
+            };
+            loop();
+            this.timer = setInterval(() => {
+                this.safeTile = Math.floor(Math.random() * 4);
+                audio.sfxClick();
+            }, 1500);
+        }
+        destroy() {
+            this.active = false;
+            if (this.timer) clearInterval(this.timer);
+        }
+    }
+
+    // MINIGAME REGISTRY
+    const MINIGAMES = [
+        { title: "Button Panic", icon: "🔴", instructions: "Click spawning buttons rapidly! Avoid fakes!", impl: MinigameButtonPanic },
+        { title: "Dodge the Doom", icon: "☄️", instructions: "Move mouse/touch to dodge falling hazards!", impl: MinigameDodgeDoom },
+        { title: "Color Chaos", icon: "🎨", instructions: "Select the FONT COLOR, not the written text!", impl: MinigameColorChaos },
+        { title: "Quick Draw", icon: "⚡", instructions: "Wait for green, then strike immediately!", impl: MinigameQuickDraw },
+        { title: "Memory Madness", icon: "🧠", instructions: "Memorize and repeat the emoji sequence!", impl: MinigameMemoryMadness },
+        { title: "Bomb Pass", icon: "💣", instructions: "Tap fast to pass the ticking bomb to opponents!", impl: MinigameBombPass },
+        { title: "Meteor Mayhem", icon: "🌋", instructions: "Avoid explosive meteor impact zones!", impl: MinigameMeteorMayhem },
+        { title: "Math Speedrun", icon: "🧮", instructions: "Solve simple equations as fast as possible!", impl: MinigameMathSpeedrun },
+        { title: "Treasure Hunt", icon: "💎", instructions: "Open boxes to find hidden diamonds!", impl: MinigameTreasureHunt },
+        { title: "Floor Is Lava", icon: "🔥", instructions: "Stay on safe green tiles before lava burns!", impl: MinigameFloorLava }
+    ];
+
+    window.onload = () => {
+        setupMenuUI();
+    };
+    </script>
+</body>
+</html>
